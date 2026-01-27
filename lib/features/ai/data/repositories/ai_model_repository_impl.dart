@@ -119,13 +119,7 @@ class AiModelRepositoryImpl implements AiModelRepository {
       // Initialize FFI bindings if not already
       final ffi = GemmaFfiBindings.instance;
       if (!ffi.initialize()) {
-        // FFI not available, use mock implementation for development
-        _isModelLoaded = true;
-        _currentModel = DefaultModels.gemma3bInt4.copyWith(
-          status: ModelStatus.loaded,
-          localPath: modelPath,
-        );
-        return Result.success(null);
+        return Result.failure('Native inference library not available');
       }
 
       // Unload existing model if any
@@ -196,12 +190,7 @@ class AiModelRepositoryImpl implements AiModelRepository {
       final ffi = GemmaFfiBindings.instance;
 
       if (!ffi.isAvailable) {
-        // Mock implementation for development
-        await Future.delayed(const Duration(seconds: 2));
-        return Result.success(
-          'This is a mock generated response. '
-          'The actual inference will work when the native library is available.',
-        );
+        return Result.failure('Native inference library not available');
       }
 
       final result = ffi.generate(
