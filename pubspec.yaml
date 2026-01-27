@@ -23,15 +23,15 @@ dependencies:
   shared_preferences: ^2.2.2
 
   # PDF Support
-  syncfusion_flutter_pdfviewer: ^24.1.41
-  syncfusion_flutter_pdf: ^24.1.41
+  syncfusion_flutter_pdfviewer: ^28.1.33
+  syncfusion_flutter_pdf: ^28.1.33
 
   # EPUB Support
   epubx: ^4.0.0
   flutter_html: ^3.0.0-beta.2
 
   # File Operations
-  file_picker: ^6.1.1
+  file_picker: ^8.0.0
   share_plus: ^7.2.1
   permission_handler: ^11.1.0
 

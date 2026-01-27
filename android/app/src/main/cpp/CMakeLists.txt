@@ -5,10 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 
-# Optimization flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -DNDEBUG")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fvisibility=hidden")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -ffast-math -DNDEBUG -fPIC")
+# Global flags (apply to all targets including llama.cpp)
+# NOTE: Do NOT use -ffast-math here — llama.cpp requires non-finite math (NaN, Infinity)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -DNDEBUG -fPIC")
 
 # ARM NEON for Android ARM64
 if(ANDROID_ABI STREQUAL "arm64-v8a")
@@ -27,8 +27,9 @@ set(LLAMA_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_COMMON OFF CACHE BOOL "" FORCE)
 set(LLAMA_HTTPLIB OFF CACHE BOOL "" FORCE)
 
-# Enable optimizations
+# Build optimizations
 set(GGML_NATIVE OFF CACHE BOOL "" FORCE)  # We set arch flags manually
+set(GGML_OPENMP OFF CACHE BOOL "" FORCE)  # Android NDK doesn't ship libomp
 
 add_subdirectory(${LLAMA_CPP_DIR} llama_cpp_build)
 
@@ -36,6 +37,9 @@ add_subdirectory(${LLAMA_CPP_DIR} llama_cpp_build)
 add_library(gemma_inference SHARED
     gemma_inference.cpp
 )
+
+# Our wrapper gets additional flags
+target_compile_options(gemma_inference PRIVATE -fvisibility=hidden)
 
 target_include_directories(gemma_inference PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
