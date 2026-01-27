@@ -1,72 +1,62 @@
-# CMake configuration for Gemma inference native library
 cmake_minimum_required(VERSION 3.18.1)
+project("gemma_inference" LANGUAGES C CXX)
 
-project("gemma_inference" LANGUAGES CXX)
-
-# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD 11)
 
-# Compiler flags for optimization
+# Optimization flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -DNDEBUG")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fvisibility=hidden")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -ffast-math -DNDEBUG -fPIC")
 
-# ARM NEON optimizations for Android
+# ARM NEON for Android ARM64
 if(ANDROID_ABI STREQUAL "arm64-v8a")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a+simd")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a+simd")
 endif()
 
-# Source files
-set(SOURCE_FILES
+# --- llama.cpp configuration ---
+set(LLAMA_CPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp)
+
+# Disable features we don't need to reduce binary size
+set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_COMMON OFF CACHE BOOL "" FORCE)
+set(LLAMA_HTTPLIB OFF CACHE BOOL "" FORCE)
+
+# Enable optimizations
+set(GGML_NATIVE OFF CACHE BOOL "" FORCE)  # We set arch flags manually
+
+add_subdirectory(${LLAMA_CPP_DIR} llama_cpp_build)
+
+# --- Our wrapper library ---
+add_library(gemma_inference SHARED
     gemma_inference.cpp
 )
 
-# Create shared library
-add_library(
-    gemma_inference
-    SHARED
-    ${SOURCE_FILES}
-)
-
-# Include directories
 target_include_directories(gemma_inference PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${LLAMA_CPP_DIR}/include
+    ${LLAMA_CPP_DIR}/ggml/include
 )
 
-# Link libraries
 target_link_libraries(gemma_inference
+    llama
+    ggml
     android
     log
 )
 
-# Export symbols
 set_target_properties(gemma_inference PROPERTIES
     CXX_VISIBILITY_PRESET hidden
     VISIBILITY_INLINES_HIDDEN ON
 )
 
-# Strip debug info in release
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set_target_properties(gemma_inference PROPERTIES
         LINK_FLAGS "-s"
     )
 endif()
-
-# ============================================
-# Instructions for integrating gemma.cpp:
-# ============================================
-#
-# 1. Clone gemma.cpp:
-#    git clone https://github.com/google/gemma.cpp
-#
-# 2. Add gemma.cpp as a subdirectory:
-#    add_subdirectory(${GEMMA_CPP_PATH} gemma_cpp)
-#
-# 3. Link against gemma:
-#    target_link_libraries(gemma_inference gemma)
-#
-# 4. Include gemma headers:
-#    target_include_directories(gemma_inference PRIVATE
-#        ${GEMMA_CPP_PATH}/include
-#    )
-# ============================================
