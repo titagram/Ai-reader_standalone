@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/extensions.dart';
 import '../../../ai/domain/entities/model_info.dart';
 import '../../../ai/presentation/providers/ai_providers.dart';
+import '../../../ai/presentation/providers/page_summaries_provider.dart';
 import '../widgets/ai_settings_section.dart';
 
 /// Settings screen
@@ -365,28 +366,30 @@ class _DataManagementCard extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear History'),
+        title: const Text('Cancella cronologia'),
         content: const Text(
-          'Are you sure you want to delete all saved summaries? This cannot be undone.',
+          'Sei sicuro di voler eliminare tutti i riassunti salvati? Questa azione non può essere annullata.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Text('Annulla'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Clear'),
+            child: const Text('Cancella'),
           ),
         ],
       ),
     );
 
     if (confirmed == true) {
-      // TODO: Implement clear summaries
+      final repository = ref.read(pageSummariesRepositoryProvider);
+      await repository.deleteAll();
+
       if (context.mounted) {
-        context.showSnackBar('History cleared');
+        context.showSnackBar('Cronologia cancellata');
       }
     }
   }
