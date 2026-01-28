@@ -5,15 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
-import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/extensions.dart';
-import '../../../ai/presentation/providers/ai_providers.dart';
 import '../../../document/data/services/document_service_factory.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 import '../../../storage/domain/entities/recent_file.dart';
-import '../providers/reader_providers.dart';
 import '../widgets/epub_viewer.dart';
+import '../../../ai/presentation/widgets/page_summary_overlay.dart';
 
 /// Document reader screen supporting PDF and EPUB
 class ReaderScreen extends ConsumerStatefulWidget {
@@ -85,84 +83,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     }
   }
 
-  Future<void> _generateSummary() async {
-    // Check if model is ready
-    final modelState = ref.read(modelStateProvider);
-    if (!modelState.isReady) {
-      _showModelNotReadyDialog();
-      return;
-    }
-
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const _SummarizingDialog(),
-    );
-
-    // Extract text
-    final service = DocumentServiceFactory.getServiceForFile(widget.filePath);
-    final textResult = await service.extractAllText(widget.filePath);
-
-    if (!mounted) return;
-
-    textResult.fold(
-      onSuccess: (text) async {
-        if (text.isEmpty) {
-          Navigator.pop(context);
-          _showErrorSnackBar('No text found in document');
-          return;
-        }
-
-        // Generate summary
-        await ref.read(summarizationProvider.notifier).generateSummary(text);
-
-        if (!mounted) return;
-        Navigator.pop(context);
-
-        final summaryState = ref.read(summarizationProvider);
-        if (summaryState.summary != null) {
-          context.push(Routes.summary, extra: {
-            'summaryText': summaryState.summary,
-            'documentName': widget.filePath.fileName,
-          });
-        } else if (summaryState.error != null) {
-          _showErrorSnackBar(summaryState.error!);
-        }
-      },
-      onFailure: (message, error) {
-        Navigator.pop(context);
-        _showErrorSnackBar(message);
-      },
-    );
-  }
-
-  void _showModelNotReadyDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('AI Model Not Ready'),
-        content: const Text(
-          'The AI model needs to be downloaded and loaded before generating summaries. '
-          'Would you like to go to settings to configure the model?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.push(Routes.settings);
-            },
-            child: const Text('Go to Settings'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -225,12 +145,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               ),
             ),
           ),
-          // Summarize button
-          IconButton(
-            icon: const Icon(Icons.summarize),
-            tooltip: 'Generate Summary',
-            onPressed: _generateSummary,
-          ),
           // More options
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
@@ -256,37 +170,41 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         ],
       ),
       body: _buildViewer(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _generateSummary,
-        tooltip: 'Generate AI Summary',
-        child: const Icon(Icons.auto_awesome),
-      ),
     );
   }
 
   Widget _buildViewer() {
     switch (_documentType) {
       case DocumentType.pdf:
-        return SfPdfViewer.file(
-          File(widget.filePath),
-          controller: _pdfController,
-          enableTextSelection: true,
-          onPageChanged: (details) {
-            setState(() {
-              _currentPage = details.newPageNumber;
-            });
-            // Update progress
-            ref.read(recentFilesProvider.notifier).updateProgress(
-                  widget.filePath,
-                  details.newPageNumber,
-                  _totalPages,
-                );
-          },
-          onDocumentLoaded: (details) {
-            setState(() {
-              _totalPages = details.document.pages.count;
-            });
-          },
+        return Stack(
+          children: [
+            SfPdfViewer.file(
+              File(widget.filePath),
+              controller: _pdfController,
+              enableTextSelection: true,
+              onPageChanged: (details) {
+                setState(() {
+                  _currentPage = details.newPageNumber;
+                });
+                // Update progress
+                ref.read(recentFilesProvider.notifier).updateProgress(
+                      widget.filePath,
+                      details.newPageNumber,
+                      _totalPages,
+                    );
+              },
+              onDocumentLoaded: (details) {
+                setState(() {
+                  _totalPages = details.document.pages.count;
+                });
+              },
+            ),
+            PageSummaryOverlay(
+              documentPath: widget.filePath,
+              currentPage: _currentPage,
+              totalPages: _totalPages,
+            ),
+          ],
         );
       case DocumentType.epub:
         return EpubViewer(
@@ -381,40 +299,6 @@ class _InfoRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(value),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Dialog shown during summarization
-class _SummarizingDialog extends StatelessWidget {
-  const _SummarizingDialog();
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      content: Row(
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(width: 24),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Generating Summary',
-                  style: context.textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'AI is analyzing the document...',
-                  style: context.textTheme.bodySmall,
-                ),
-              ],
-            ),
           ),
         ],
       ),
