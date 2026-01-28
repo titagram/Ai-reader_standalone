@@ -27,6 +27,7 @@ class MockAiModelRepository implements AiModelRepository {
   int unloadModelCallCount = 0;
   int generateTextCallCount = 0;
   int generateSummaryCallCount = 0;
+  int generateWithCustomPromptCallCount = 0;
   int deleteModelCallCount = 0;
   int getLocalModelPathCallCount = 0;
 
@@ -128,6 +129,22 @@ class MockAiModelRepository implements AiModelRepository {
     TokenCallback? onToken,
   }) async {
     generateSummaryCallCount++;
+
+    if (shouldFailGenerate) {
+      return Result.failure(
+          'Generation failed', Exception('Mock generation error'));
+    }
+
+    return Result.success(generateResult);
+  }
+
+  @override
+  Future<Result<String>> generateWithCustomPrompt(
+    String prompt, {
+    InferenceConfig? config,
+    TokenCallback? onToken,
+  }) async {
+    generateWithCustomPromptCallCount++;
 
     if (shouldFailGenerate) {
       return Result.failure(
