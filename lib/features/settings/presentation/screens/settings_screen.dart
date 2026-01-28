@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/extensions.dart';
 import '../../../ai/domain/entities/model_info.dart';
 import '../../../ai/presentation/providers/ai_providers.dart';
+import '../widgets/ai_settings_section.dart';
 
 /// Settings screen
 class SettingsScreen extends ConsumerWidget {
@@ -24,6 +25,12 @@ class SettingsScreen extends ConsumerWidget {
           // AI Model Section
           _SectionHeader(title: 'AI Model'),
           _ModelSettingsCard(modelState: modelState),
+
+          const Divider(height: 32),
+
+          // AI Summary Settings Section
+          _SectionHeader(title: 'AI Summary Settings'),
+          const AiSettingsSection(),
 
           const Divider(height: 32),
 
