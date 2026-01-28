@@ -52,6 +52,13 @@ abstract class AiModelRepository {
     TokenCallback? onToken,
   });
 
+  /// Generate text with a custom prompt (for page summaries)
+  Future<Result<String>> generateWithCustomPrompt(
+    String prompt, {
+    InferenceConfig? config,
+    TokenCallback? onToken,
+  });
+
   /// Delete downloaded model
   Future<Result<void>> deleteModel(String modelName);
 

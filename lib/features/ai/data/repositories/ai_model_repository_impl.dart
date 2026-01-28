@@ -230,6 +230,26 @@ class AiModelRepositoryImpl implements AiModelRepository {
     );
   }
 
+  @override
+  Future<Result<String>> generateWithCustomPrompt(
+    String prompt, {
+    InferenceConfig? config,
+    TokenCallback? onToken,
+  }) async {
+    // Wrap prompt in Gemma format
+    final formattedPrompt = '''<start_of_turn>user
+$prompt
+<end_of_turn>
+<start_of_turn>model
+''';
+
+    return generateText(
+      formattedPrompt,
+      config: config ?? InferenceConfig.summarization,
+      onToken: onToken,
+    );
+  }
+
   String _buildSummarizationPrompt(String text, String language) {
     // Truncate text if too long
     final maxLength = 8000;
