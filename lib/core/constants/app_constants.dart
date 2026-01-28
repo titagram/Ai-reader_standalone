@@ -7,7 +7,7 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // Model Info
-  static const String defaultModelName = 'gemma-3b-it-int4';
+  static const String defaultModelName = 'gemma-3-1b-it-q4km';
   static const String modelFileExtension = '.gguf';
   static const int defaultMaxTokens = 1024;
   static const double defaultTemperature = 0.7;
@@ -30,7 +30,7 @@ class AppConstants {
 
   // Database
   static const String databaseName = 'ai_reader.db';
-  static const int databaseVersion = 1;
+  static const int databaseVersion = 2;
 
   // UI
   static const int maxRecentFiles = 10;

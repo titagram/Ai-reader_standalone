@@ -94,13 +94,45 @@ class DatabaseHelper {
         'CREATE INDEX idx_annotations_document ON annotations(document_path)');
     await db.execute(
         'CREATE INDEX idx_bookmarks_document ON bookmarks(document_path)');
+
+    // Create page_summaries table
+    await db.execute('''
+      CREATE TABLE page_summaries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        document_path TEXT NOT NULL,
+        unit_number INTEGER NOT NULL,
+        unit_type TEXT NOT NULL,
+        summary_text TEXT NOT NULL,
+        prompt_template_id TEXT,
+        language TEXT DEFAULT 'it',
+        created_at TEXT NOT NULL,
+        UNIQUE(document_path, unit_number, unit_type)
+      )
+    ''');
+
+    await db.execute(
+        'CREATE INDEX idx_page_summaries_doc ON page_summaries(document_path)');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Handle database migrations here
-    // For now, we just recreate tables if version changes
-    if (oldVersion < newVersion) {
-      // Add migration logic as needed
+    if (oldVersion < 2) {
+      // Migration to version 2: add page_summaries table
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS page_summaries (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          document_path TEXT NOT NULL,
+          unit_number INTEGER NOT NULL,
+          unit_type TEXT NOT NULL,
+          summary_text TEXT NOT NULL,
+          prompt_template_id TEXT,
+          language TEXT DEFAULT 'it',
+          created_at TEXT NOT NULL,
+          UNIQUE(document_path, unit_number, unit_type)
+        )
+      ''');
+
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_page_summaries_doc ON page_summaries(document_path)');
     }
   }
 
