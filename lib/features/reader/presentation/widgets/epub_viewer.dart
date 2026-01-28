@@ -2,10 +2,14 @@ import 'dart:io';
 
 import 'package:epubx/epubx.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html/flutter_html.dart' hide UnitType;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../ai/domain/entities/page_summary.dart';
+import '../../../ai/presentation/widgets/page_summary_overlay.dart';
 
 /// EPUB viewer widget
-class EpubViewer extends StatefulWidget {
+class EpubViewer extends ConsumerStatefulWidget {
   const EpubViewer({
     super.key,
     required this.filePath,
@@ -16,10 +20,10 @@ class EpubViewer extends StatefulWidget {
   final void Function(int current, int total)? onPageChanged;
 
   @override
-  State<EpubViewer> createState() => _EpubViewerState();
+  ConsumerState<EpubViewer> createState() => _EpubViewerState();
 }
 
-class _EpubViewerState extends State<EpubViewer> {
+class _EpubViewerState extends ConsumerState<EpubViewer> {
   EpubBook? _book;
   List<EpubChapter> _chapters = [];
   int _currentChapterIndex = 0;
@@ -93,31 +97,42 @@ class _EpubViewerState extends State<EpubViewer> {
       );
     }
 
-    return Column(
+    return Stack(
       children: [
-        // Chapter navigation
-        _ChapterNavigator(
-          chapters: _chapters,
-          currentIndex: _currentChapterIndex,
-          onChapterSelected: (index) {
-            _pageController.jumpToPage(index);
-          },
+        Column(
+          children: [
+            // Chapter navigation
+            _ChapterNavigator(
+              chapters: _chapters,
+              currentIndex: _currentChapterIndex,
+              onChapterSelected: (index) {
+                _pageController.jumpToPage(index);
+              },
+            ),
+            // Chapter content
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _chapters.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentChapterIndex = index;
+                  });
+                  widget.onPageChanged?.call(index + 1, _chapters.length);
+                },
+                itemBuilder: (context, index) {
+                  return _ChapterContent(chapter: _chapters[index]);
+                },
+              ),
+            ),
+          ],
         ),
-        // Chapter content
-        Expanded(
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: _chapters.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentChapterIndex = index;
-              });
-              widget.onPageChanged?.call(index + 1, _chapters.length);
-            },
-            itemBuilder: (context, index) {
-              return _ChapterContent(chapter: _chapters[index]);
-            },
-          ),
+        // Chapter summary overlay (uses chapter index + 1 as unit number)
+        PageSummaryOverlay(
+          documentPath: widget.filePath,
+          currentPage: _currentChapterIndex + 1,
+          totalPages: _chapters.length,
+          unitType: UnitType.chapter,
         ),
       ],
     );
