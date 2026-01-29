@@ -10,6 +10,9 @@
 
 #include <stdint.h>
 
+// Export symbols for FFI visibility
+#define GEMMA_API __attribute__((visibility("default")))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,12 +24,12 @@ extern "C" {
  * @param num_threads Number of threads to use for inference
  * @return 0 on success, non-zero error code on failure
  */
-int32_t gemma_init_model(const char* model_path, int32_t num_threads);
+GEMMA_API int32_t gemma_init_model(const char* model_path, int32_t num_threads);
 
 /**
  * Free the loaded model and release resources.
  */
-void gemma_free_model(void);
+GEMMA_API void gemma_free_model(void);
 
 /**
  * Generate text from a prompt.
@@ -40,7 +43,7 @@ void gemma_free_model(void);
  * @param output_size Size of the output buffer
  * @return Number of bytes written to output, or negative error code
  */
-int32_t gemma_generate(
+GEMMA_API int32_t gemma_generate(
     const char* prompt,
     int32_t max_tokens,
     double temperature,
@@ -55,14 +58,14 @@ int32_t gemma_generate(
  *
  * @return 1 if model is loaded, 0 otherwise
  */
-int32_t gemma_is_model_loaded(void);
+GEMMA_API int32_t gemma_is_model_loaded(void);
 
 /**
  * Get the last error message.
  *
  * @return Pointer to error message string, or NULL if no error
  */
-const char* gemma_get_last_error(void);
+GEMMA_API const char* gemma_get_last_error(void);
 
 /**
  * Set the callback for streaming token output.
@@ -70,12 +73,12 @@ const char* gemma_get_last_error(void);
  * @param callback Function pointer for token callback
  */
 typedef void (*gemma_token_callback)(const char* token);
-void gemma_set_token_callback(gemma_token_callback callback);
+GEMMA_API void gemma_set_token_callback(gemma_token_callback callback);
 
 /**
  * Cancel ongoing generation.
  */
-void gemma_cancel_generation(void);
+GEMMA_API void gemma_cancel_generation(void);
 
 #ifdef __cplusplus
 }

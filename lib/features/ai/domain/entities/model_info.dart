@@ -119,22 +119,22 @@ class ModelInfo extends Equatable {
       ];
 }
 
-/// Default Gemma 3B model configuration
+/// Default Gemma model configurations
 class DefaultModels {
   DefaultModels._();
 
   static const ModelInfo gemma3bInt4 = ModelInfo(
-    name: 'gemma-3b-it-int4',
-    displayName: 'Gemma 3B IT (int4)',
+    name: 'gemma-3-1b-it-q4km',
+    displayName: 'Gemma 3 1B IT (Q4_K_M)',
     description:
-        'Google Gemma 3B instruction-tuned model, quantized to 4-bit for efficient mobile inference.',
+        'Google Gemma 3 1B instruction-tuned model, Q4_K_M quantized for efficient mobile inference. ~769 MB download.',
     downloadUrl:
-        'https://huggingface.co/google/gemma-3-3b-it-qat-q4_0-gguf/resolve/main/gemma-3-3b-it-q4_0.gguf',
-    fileSizeBytes: 2000000000, // ~2GB
-    fileName: 'gemma-3-3b-it-q4_0.gguf',
+        'https://huggingface.co/unsloth/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf',
+    fileSizeBytes: 806058272, // ~769 MB
+    fileName: 'gemma-3-1b-it-Q4_K_M.gguf',
     version: '3.0',
-    quantization: 'int4',
-    parameters: '3B',
+    quantization: 'Q4_K_M',
+    parameters: '1B',
     contextLength: 8192,
   );
 
